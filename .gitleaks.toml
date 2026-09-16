@@ -1,0 +1,11 @@
+# Gitleaks config: default rules, plus allowlist for the test fixtures'
+# deliberate fakes (RFC-5737 documentation IPs, the leak-canary string).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "test fixtures: documentation IPs and the canary value"
+regexes = [
+  '''203\.0\.113\.\d+''',
+  '''secret-canary-value-9c1''',
+]
