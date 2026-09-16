@@ -167,18 +167,22 @@ def parse_gate_overrides(args: list[str]) -> tuple[list[str], dict[str, str]]:
 
 
 def run_verb(verb: str, extra: list[str], env: dict[str, str], tf_dir: Path,
-             gate=None, run=subprocess.run) -> int:
+             gate=None, run=subprocess.run, ensure_init: bool = True) -> int:
     """Execute one verb. ``plan`` streams tofu's human-readable output;
     ``apply``/``destroy`` run the gated planfile pipeline (module docstring).
-    ``gate`` is called with the parsed plan JSON and raises to refuse."""
+    ``gate`` is called with the parsed plan JSON and raises to refuse.
+    ``ensure_init=False`` skips the idempotent plain ``tofu init`` before a
+    non-init verb — for consumers whose init needs ``-backend-config`` args
+    and therefore run their own init first."""
     if verb not in VERBS:
         raise RunnerError(f"verb {verb!r} is not one of {'|'.join(VERBS)} — "
                           "other tofu verbs print decrypted secrets and are unreachable here")
     if verb == "init":
         return run(["tofu", "init", "-input=false", *extra], cwd=tf_dir, env=env, check=False).returncode  # noqa: S603, S607
-    rc = run(["tofu", "init", "-input=false"], cwd=tf_dir, env=env, check=False).returncode  # noqa: S603, S607
-    if rc != 0:
-        return rc
+    if ensure_init:
+        rc = run(["tofu", "init", "-input=false"], cwd=tf_dir, env=env, check=False).returncode  # noqa: S603, S607
+        if rc != 0:
+            return rc
     if verb == "plan":
         return run(["tofu", "plan", "-input=false", *extra], cwd=tf_dir, env=env, check=False).returncode  # noqa: S603, S607
     with _APPLY_LOCK, tempfile.TemporaryDirectory(prefix="tofu-plan-") as tmp:

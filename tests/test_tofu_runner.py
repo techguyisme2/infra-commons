@@ -259,6 +259,13 @@ def test_init_passes_through(tf_dir, fake_tofu, tofu_log):
     assert _calls(tofu_log) == [["init", "-input=false"]]
 
 
+def test_ensure_init_false_skips_the_plain_init(tf_dir, fake_tofu, tofu_log):
+    # For consumers whose init needs -backend-config and runs separately.
+    env = _env(fake_tofu, tofu_log, PLAN_JSON=json.dumps(PLAN_DOC))
+    assert tr.run_verb("apply", [], env, tf_dir, ensure_init=False) == 0
+    assert _calls(tofu_log)[0][0] == "plan"
+
+
 # ---------------------------------------------------------------- plangate
 
 def test_planned_deletes_includes_replaces():
