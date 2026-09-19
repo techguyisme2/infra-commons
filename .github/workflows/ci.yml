@@ -40,6 +40,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # ubuntu runners ship shellcheck; the hook mechanisms must stay clean.
+  shellcheck:
+    name: Shell lint (shellcheck)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Lint the hook mechanisms
+        run: shellcheck hooks/*.sh
+
   lint:
     name: Lint (ruff)
     runs-on: ubuntu-latest
@@ -51,7 +62,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      # Same pin as todo's lint gate so the rules match across repos.
+      # Same pin as the consumers' lint gates so the rules match across repos.
       - name: Install ruff
         run: pip install ruff==0.16.6
 

@@ -23,6 +23,18 @@ here.
   `tofu_runner/plangate.py` — the destructive-plan gate: default-refuse
   deletes of consumer-listed protected addresses, per-run CLI overrides with
   a stated reason, address-only refusal messages.
+- **`hooks/`** — bash mechanisms for a consumer's git hooks, called from thin
+  shims in the consumer's own `core.hooksPath` directory: a sha256-pinned
+  gitleaks fetcher (`ensure-gitleaks.sh`), a staged-diff scan for pre-commit
+  (`gitleaks-staged.sh`), a full-outgoing-range scan for pre-push
+  (`gitleaks-outgoing.sh` — every pushed ref, new branches included), a
+  pre-commit-framework runner (`precommit-framework.sh`) and a protected-ref
+  gate that runs a consumer command only when a listed ref is updated
+  (`refgate-run.sh`). Every mechanism fails closed and none has a skip
+  variable: bypass switches and the posture level (mandatory / bypassable /
+  advisory) are the consumer's, recorded in the consumer's repo.
+  Interfaces, a generic shim and the posture-record template:
+  [`hooks/README.md`](hooks/README.md).
 
 ## Consumption contract
 
@@ -36,18 +48,29 @@ git -C ~/infra-commons checkout <pinned-ref>     # the consumer's recorded pin
 Python is imported via path (`sys.path` insert of the checkout) from a
 consumer shim that records its pin in-repo (e.g. `deploy/infra-commons.pin`)
 and fails closed when the pinned ref's package tree doesn't match the
-checkout's. Never vendor wholesale; future HCL snippets are copied with a
+checkout's. Hook mechanisms are called by path from consumer-owned shims
+that apply the same rule to `hooks/` before running anything from the checkout
+(the check lives in the consumer on purpose — see `hooks/README.md`). Never
+vendor wholesale; future HCL snippets are copied with a
 `# source: infra-commons@<ref>` provenance line. Rollback for a consumer =
 pin the previous ref.
 
 Releases are annotated tags (`v0.1.2`, ...). A consumer upgrades by moving
-its pin, running its own contract tests and its verify gate.
+its pin, running its own contract tests and its verify gate. The pins are
+content-based per subtree, so **any change under `tofu_runner/` or `hooks/`
+needs a new tag** before a consumer of that subtree can take it; doc-only
+commits don't.
 
 ## Tests
 
 ```bash
 python -m pytest -q tests        # mechanism tests (stdlib + pytest only)
+shellcheck hooks/*.sh            # the hook mechanisms (also a CI job)
 ```
+
+The hooks tests are hermetic — temp git repos, a fake gitleaks, a stub `curl`;
+they need `git` and `bash`, never the network. One extra test runs only where
+a real `gitleaks` is on `PATH`.
 
 Mechanism tests run here in CI. **Consumer tripwires stay in each consumer's
 own CI** — they scan the consumer's tree and are meaningless here.
