@@ -35,6 +35,15 @@ here.
   advisory) are the consumer's, recorded in the consumer's repo.
   Interfaces, a generic shim and the posture-record template:
   [`hooks/README.md`](hooks/README.md).
+- **Tier B — knowledge, not code** (copied with a provenance line, never
+  imported): **`harness/`** — the generic node/gate deploy model
+  (`HARNESS.md`; consumers keep their own instantiation table);
+  **`templates/`** — document shapes (names-only key inventory, cutover
+  runbook, rotation log + the staged deploy-key rotation, dated dispositions
+  for allowlists, the launcher seam); **`hcl/`** — an OpenTofu snippet
+  library in two classes, `shared/` (proven in two consumers) and
+  `single-source/` (proven in one, recorded with a caveat), each file
+  self-validating with a provenance header. Not a module.
 
 ## Consumption contract
 
